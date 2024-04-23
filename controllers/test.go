@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/karthikeyan-amk/go-curd/initializer"
@@ -45,43 +46,43 @@ func GetMovies(c *gin.Context) {
 
 	c.JSON(200, Movies)
 }
+
 func UpdateMovie(c *gin.Context) {
+	// Get movie title from URL
 	title := c.Param("title")
 
-	var body models.Movie
-	c.BindJSON(&body)
-
-	filter := bson.M{"Title": title}
-
-	update := bson.M{"$set": bson.M{"Title": body.Title, "Year": body.Year}}
-
-	result, err := initializer.TestCollection.UpdateOne(context.Background(), filter, update)
-	if err != nil {
-		log.Println("Error decoding Movie:", err)
+	// Bind JSON data to Movie struct
+	var updatedMovie models.Movie
+	if err := c.BindJSON(&updatedMovie); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Movie Updated successfully!", "Movie": result})
+	// Update movie in the database based on the movie title
+	filter := bson.M{"title": title}
+	update := bson.M{"$set": bson.M{"year": updatedMovie.Year}}
 
+	_, err := initializer.TestCollection.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update movie"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Movie updated successfully"})
 }
 
 func DeleteMovie(c *gin.Context) {
+	// Get movie title from URL
 	title := c.Param("title")
 
-	result, err := initializer.TestCollection.DeleteMany(context.Background(), bson.M{"Title": title})
-	log.Println("Delete result:", result)
+	// Delete movie from the database based on the movie title
+	filter := bson.M{"title": title}
 
+	_, err := initializer.TestCollection.DeleteOne(context.Background(), filter)
 	if err != nil {
-		log.Println("Error deleting Movie:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete movie"})
 		return
 	}
 
-	if result.DeletedCount == 0 {
-		log.Println("Delete Count:", result.DeletedCount)
-
-		c.JSON(400, gin.H{"error": "Movie Not Found"})
-		return
-	}
-	c.JSON(200, gin.H{"message": "Movie deleted successfully"})
-
+	c.JSON(http.StatusOK, gin.H{"message": "Movie deleted successfully"})
 }
