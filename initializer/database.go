@@ -14,7 +14,7 @@ var TestCollection *mongo.Collection
 func Database() {
 	// Use the SetServerAPIOptions() method to set the version of the Stable API on the client
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("url").SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI("mongodb+srv://karthikeyan:Ik1JW84ClCJkljzO@cluster0.mewwxmt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").SetServerAPIOptions(serverAPI)
 	client, err := mongo.Connect(context.Background(), opts)
 
 	if err != nil {
